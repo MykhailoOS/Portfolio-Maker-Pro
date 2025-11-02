@@ -50,10 +50,19 @@ export type HeroSectionData = {
   ctaButton: LocalizedString;
 };
 
+export interface ImageValue {
+  id: string;
+  url: string;
+  alt?: string;
+}
+
 export type AboutSectionData = {
   title: LocalizedString;
   paragraph: LocalizedString;
-  imageUrl: string;
+  avatar?: ImageValue;
+  imageUrl?: string; // Keep for backward compatibility
+  tags?: string[];
+  layout?: 'left-image' | 'right-image' | 'stacked';
 };
 
 export type SkillsSectionData = {

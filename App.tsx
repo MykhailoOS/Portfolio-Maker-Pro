@@ -1,70 +1,62 @@
-import React, { useState, useReducer, useCallback, useMemo, useEffect } from 'react';
-import type { Portfolio, Section, Locale, DeviceView } from './types';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import type { Portfolio, Section, Locale, DeviceView, SectionType } from './types';
 import { INITIAL_PORTFOLIO_DATA } from './constants';
 import { TopBar } from './components/TopBar';
 import { Library } from './components/Library';
 import { Canvas } from './components/Canvas';
-import { Inspector } from './components/Inspector';
+import { InspectorNew } from './components/Inspector/InspectorNew';
+import { useProjectStore } from './store/project';
+import { aboutSchema } from './schemas/about';
+import type { SectionSchema } from './schemas/types';
+import { TooltipProvider } from './components/ui/tooltip';
 import { Menu, X } from 'lucide-react';
 
-type PortfolioAction =
-  | { type: 'UPDATE_SECTION'; payload: { sectionId: string; data: any } }
-  | { type: 'ADD_SECTION'; payload: { section: Section } }
-  | { type: 'REMOVE_SECTION'; payload: { sectionId: string } }
-  | { type: 'REORDER_SECTIONS'; payload: { startIndex: number; endIndex: number } };
-
-function portfolioReducer(state: Portfolio, action: PortfolioAction): Portfolio {
-  switch (action.type) {
-    case 'UPDATE_SECTION':
-      return {
-        ...state,
-        sections: state.sections.map((s) =>
-          s.id === action.payload.sectionId ? { ...s, data: { ...s.data, ...action.payload.data } } : s
-        ),
-      };
-    case 'ADD_SECTION':
-      return { ...state, sections: [...state.sections, action.payload.section] };
-    case 'REMOVE_SECTION':
-      return { ...state, sections: state.sections.filter((s) => s.id !== action.payload.sectionId) };
-    case 'REORDER_SECTIONS': {
-      const result = Array.from(state.sections);
-      const [removed] = result.splice(action.payload.startIndex, 1);
-      result.splice(action.payload.endIndex, 0, removed);
-      return { ...state, sections: result };
-    }
-    default:
-      return state;
-  }
-}
+// Map section types to their schemas
+const schemaMap: Record<string, SectionSchema> = {
+  about: aboutSchema,
+  // Add more schemas here as they are created
+};
 
 export default function App() {
-  const [portfolio, dispatch] = useReducer(portfolioReducer, INITIAL_PORTFOLIO_DATA);
-  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(portfolio.sections[0]?.id || null);
-  const [activeLocale, setActiveLocale] = useState<Locale>(portfolio.defaultLocale);
+  const { present: portfolio, setPortfolio, updateSection, addSection, reorderSections } = useProjectStore();
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [activeLocale, setActiveLocale] = useState<Locale>('en');
   const [isLibraryOpen, setLibraryOpen] = useState(false);
   const [isInspectorOpen, setInspectorOpen] = useState(false);
   const [deviceView, setDeviceView] = useState<DeviceView>('desktop');
   const [justAddedSectionId, setJustAddedSectionId] = useState<string | null>(null);
 
+  // Initialize store with initial data on mount
+  useEffect(() => {
+    setPortfolio(INITIAL_PORTFOLIO_DATA);
+    setSelectedSectionId(INITIAL_PORTFOLIO_DATA.sections[0]?.id || null);
+    setActiveLocale(INITIAL_PORTFOLIO_DATA.defaultLocale);
+  }, [setPortfolio]);
+
   const selectedSection = useMemo(() => 
-    portfolio.sections.find((s) => s.id === selectedSectionId), 
-    [portfolio.sections, selectedSectionId]
+    portfolio?.sections?.find((s) => s.id === selectedSectionId), 
+    [portfolio?.sections, selectedSectionId]
   );
+
+  const selectedSchema = useMemo(() => {
+    if (!selectedSection) return null;
+    return schemaMap[selectedSection.type] || null;
+  }, [selectedSection]);
   
   const handleUpdateSection = useCallback((sectionId: string, data: any) => {
-    dispatch({ type: 'UPDATE_SECTION', payload: { sectionId, data } });
-  }, []);
+    updateSection(sectionId, data);
+  }, [updateSection]);
 
   const handleAddSection = useCallback((section: Section) => {
-    dispatch({ type: 'ADD_SECTION', payload: { section } });
+    addSection(section);
     setSelectedSectionId(section.id);
     setJustAddedSectionId(section.id);
-    setLibraryOpen(false); // Close library on mobile after adding
-  }, []);
+    setLibraryOpen(false);
+  }, [addSection]);
 
   const handleReorder = useCallback((startIndex: number, endIndex: number) => {
-    dispatch({ type: 'REORDER_SECTIONS', payload: { startIndex, endIndex } });
-  }, []);
+    reorderSections(startIndex, endIndex);
+  }, [reorderSections]);
 
   const handleSelectSection = (sectionId: string) => {
     setSelectedSectionId(sectionId);
@@ -87,7 +79,13 @@ export default function App() {
     }
   }, [justAddedSectionId]);
 
+  // Don't render until portfolio is loaded
+  if (!portfolio) {
+    return <div className="bg-brand-dark text-brand-light min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
   return (
+    <TooltipProvider>
     <div className="bg-brand-dark text-brand-light font-sans min-h-screen flex flex-col">
       <TopBar 
         projectName={portfolio.name} 
@@ -130,9 +128,10 @@ export default function App() {
         {/* Inspector (Desktop Sidebar / Mobile Bottom Sheet) */}
         <div className={`fixed z-50 bottom-0 left-0 right-0 md:relative md:inset-y-0 md:right-0 md:transform-none transition-transform duration-300 ease-in-out ${isInspectorOpen ? 'translate-y-0' : 'translate-y-full'} md:translate-y-0`}>
           <div className="bg-brand-dark md:w-[350px] h-[75dvh] md:h-full flex flex-col animate-sheet-in md:animate-none">
-            <Inspector
-                key={selectedSectionId} // Re-mount inspector on selection change
+            <InspectorNew
+                key={selectedSectionId}
                 section={selectedSection}
+                schema={selectedSchema}
                 onUpdate={handleUpdateSection}
                 activeLocale={activeLocale}
                 onClose={() => setInspectorOpen(false)}
@@ -143,5 +142,6 @@ export default function App() {
 
       </main>
     </div>
+    </TooltipProvider>
   );
 }
