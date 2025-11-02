@@ -45,17 +45,63 @@ const HeroSection: React.FC<{ data: any; locale: Locale; effects: any }> = ({ da
   );
 };
 
-const AboutSection: React.FC<{ data: any; locale: Locale }> = ({ data, locale }) => (
-    <div className="py-24 px-6 flex flex-col md:flex-row items-center gap-12">
-        <div className="md:w-1/3">
-            <img src={data.imageUrl} alt="About me" className="rounded-2xl shadow-2xl object-cover w-full h-auto aspect-[3/4]"/>
+const AboutSection: React.FC<{ data: any; locale: Locale }> = ({ data, locale }) => {
+    const imageUrl = data.avatar?.url || data.imageUrl;
+    const layout = data.layout || 'left-image';
+    const tags = data.tags || [];
+    
+    const imageElement = imageUrl ? (
+        <div className={layout === 'stacked' ? 'w-full max-w-md mx-auto' : 'md:w-1/3'}>
+            <img 
+                src={imageUrl} 
+                alt={data.avatar?.alt || 'About me'} 
+                className="rounded-2xl shadow-2xl object-cover w-full h-auto aspect-[3/4]"
+            />
         </div>
-        <div className="md:w-2/3">
+    ) : null;
+    
+    const contentElement = (
+        <div className={layout === 'stacked' ? 'w-full' : 'md:w-2/3'}>
             <h2 className="text-4xl font-bold mb-4">{data.title?.[locale]}</h2>
-            <p className="text-lg text-brand-mist leading-relaxed">{data.paragraph?.[locale]}</p>
+            <p className="text-lg text-brand-mist leading-relaxed mb-4">{data.paragraph?.[locale]}</p>
+            {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                    {tags.map((tag: string, index: number) => (
+                        <span key={index} className="px-3 py-1 text-sm bg-brand-accent/20 text-brand-accent rounded-full">
+                            {tag}
+                        </span>
+                    ))}
+                </div>
+            )}
         </div>
-    </div>
-);
+    );
+    
+    if (layout === 'stacked') {
+        return (
+            <div className="py-24 px-6 flex flex-col items-center gap-12 text-center">
+                {imageElement}
+                {contentElement}
+            </div>
+        );
+    }
+    
+    if (layout === 'right-image') {
+        return (
+            <div className="py-24 px-6 flex flex-col md:flex-row items-center gap-12">
+                {contentElement}
+                {imageElement}
+            </div>
+        );
+    }
+    
+    // Default: left-image
+    return (
+        <div className="py-24 px-6 flex flex-col md:flex-row items-center gap-12">
+            {imageElement}
+            {contentElement}
+        </div>
+    );
+};
 
 const SkillsSection: React.FC<{ data: any; locale: Locale }> = ({ data, locale }) => (
     <div className="py-24 px-6 bg-brand-night">

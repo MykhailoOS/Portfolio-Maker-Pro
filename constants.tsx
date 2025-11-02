@@ -38,6 +38,8 @@ export const INITIAL_PORTFOLIO_DATA: Portfolio = {
         title: { en: 'About Me', ua: 'Про мене', ru: 'Обо мне', pl: 'O mnie' },
         paragraph: { en: 'I am a passionate developer with a love for building beautiful and functional web applications. I specialize in the React ecosystem and enjoy exploring new technologies to push the boundaries of what\'s possible on the web.', ua: 'Я - захоплений розробник, який любить створювати красиві та функціональні веб-додатки. Я спеціалізуюся на екосистемі React і люблю досліджувати нові технології, щоб розширювати межі можливого в Інтернеті.', ru: 'Я - увлеченный разработчик, который любит создавать красивые и функциональные веб-приложения. Я специализируюсь на экосистеме React и люблю исследовать новые технологии, чтобы расширять границы возможного в Интернете.', pl: 'Jestem pasjonatem programowania, który uwielbia tworzyć piękne i funkcjonalne aplikacje internetowe. Specjalizuję się w ekosystemie React i lubię odkrywać nowe technologie, aby przesuwać granice tego, co jest możliwe w internecie.' },
         imageUrl: 'https://picsum.photos/600/800',
+        tags: ['React', 'TypeScript', 'Web3D'],
+        layout: 'left-image',
       } as AboutSectionData,
     },
     {
